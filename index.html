@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finanzas">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<title>FinanzasApp</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+/* ── TUTORIAL OVERLAY ─────────────────────── */
+.tutorial-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  pointer-events: none;
+}
+.tutorial-overlay.active { pointer-events: all; }
+
+.tut-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0); transition: background .4s;
+}
+.tutorial-overlay.active .tut-backdrop { background: rgba(0,0,0,0.75); }
+
+/* Spotlight hole via clip */
+.tut-spotlight {
+  position: absolute;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.75);
+  border: 2px solid var(--accent);
+  transition: all .45s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  opacity: 0;
+}
+.tutorial-overlay.active .tut-spotlight { opacity: 1; }
+
+.tut-bubble {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 18px 20px;
+  max-width: 300px; width: calc(100vw - 40px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  transition: all .45s cubic-bezier(.4,0,.2,1);
+  opacity: 0; transform: translateY(10px);
+}
+.tutorial-overlay.active .tut-bubble { opacity: 1; transform: translateY(0); }
+
+.tut-step-label {
+  font-size: 10px; color: var(--accent); letter-spacing: .15em;
+  text-transform: uppercase; margin-bottom: 6px;
+  font-family: var(--font-m);
+}
+.tut-title {
+  font-family: var(--font-d); font-size: 16px; font-weight: 800;
+  margin-bottom: 8px;
+}
+.tut-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.tut-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16px;
+}
+.tut-dots { display: flex; gap: 5px; }
+.tut-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border2); transition: background .2s, width .2s;
+}
+.tut-dot.active { background: var(--accent); width: 16px; border-radius: 3px; }
+.tut-next {
+  font-family: var(--font-d); font-size: 12px; font-weight: 700;
+  background: var(--accent); color: #0a0a0f;
+  border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer;
+  transition: opacity .2s;
+}
+.tut-next:hover { opacity: .85; }
+.tut-skip {
+  font-size: 11px; color: var(--muted); background: none; border: none;
+  cursor: pointer; font-family: var(--font-m); padding: 4px;
+  transition: color .2s;
+}
+.tut-skip:hover { color: var(--text2); }
+
+/* FAB tutorial button */
+.fab-tutorial {
+  position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 16px); right: 16px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; z-index: 50;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  transition: all var(--trans);
+}
+.fab-tutorial:hover { border-color: var(--accent); transform: scale(1.05); }
+
+/* ── GOAL IMAGE UPLOAD ─── */
+.goal-img-wrap {
+  width: 100%; aspect-ratio: 16/7;
+  border-radius: 10px; overflow: hidden;
+  background: var(--card2); border: 1px dashed var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; margin-bottom: 12px; position: relative;
+  transition: border-color var(--trans);
+}
+.goal-img-wrap:hover { border-color: var(--accent); }
+.goal-img-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+  position: absolute; inset: 0;
+}
+.goal-img-placeholder { text-align: center; color: var(--muted); font-size: 12px; }
+.goal-img-placeholder span { font-size: 28px; display: block; margin-bottom: 6px; }
+.goal-img-del {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,0,0,.6); border: none; border-radius: 50%;
+  width: 28px; height: 28px; color: #fff; font-size: 13px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity var(--trans);
+}
+.goal-img-wrap:hover .goal-img-del { opacity: 1; }
+
+/* Goal card image */
+.goal-card-img {
+  width: 100%; aspect-ratio: 16/6;
+  border-radius: 8px; overflow: hidden; margin-bottom: 12px;
+}
+.goal-card-img img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── MISC ── */
+.page-actions { display: flex; gap: 8px; }
+.month-nav-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- TUTORIAL FAB -->
+<button class="fab-tutorial" id="fab-tutorial" onclick="startTutorial()" title="Tutorial">❓</button>
+
+<!-- ═══════════════════════════════════════
+     TUTORIAL OVERLAY
+════════════════════════════════════════ -->
+<div class="tutorial-overlay" id="tutorial-overlay">
+  <div class="tut-backdrop" onclick="skipTutorial()"></div>
+  <div class="tut-spotlight" id="tut-spotlight"></div>
+  <div class="tut-bubble" id="tut-bubble">
+    <div class="tut-step-label" id="tut-step-label">Paso 1 de 8</div>
+    <div class="tut-title" id="tut-title"></div>
+    <div class="tut-desc" id="tut-desc"></div>
+    <div class="tut-nav">
+      <button class="tut-skip" onclick="skipTutorial()">Saltar tutorial</button>
+      <div class="tut-dots" id="tut-dots"></div>
+      <button class="tut-next" id="tut-next" onclick="nextTutorialStep()">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     BOTTOM NAV
+════════════════════════════════════════ -->
+<nav class="nav" id="main-nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-page="dashboard" onclick="navigate('dashboard')">
+      <span class="nav-icon">📊</span>
+      <span>Inicio</span>
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-btn" data-page="gastos" onclick="navigate('gastos')">
+      <span class="nav-icon">💸</span>
+      <span>Gastos</span>
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-btn" data-page="metas" onclick="navigate('metas')">
+      <span class="nav-icon">🎯</span>
+      <span>Metas</span>
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-btn" data-page="cuentas" onclick="navigate('cuentas')">
+      <span class="nav-icon">🏦</span>
+      <span>Cuentas</span>
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-btn" data-page="consejos" onclick="navigate('consejos')">
+      <span class="nav-icon">💡</span>
+      <span>Consejos</span>
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-btn" data-page="notas" onclick="navigate('notas')">
+      <span class="nav-icon">📝</span>
+      <span>Notas</span>
+      <span class="nav-dot"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     PAGE: DASHBOARD
+════════════════════════════════════════ -->
+<div class="app">
+<div class="page active" id="page-dashboard">
+  <div class="sticky-head">
+    <div class="head-left">
+      <div class="page-title">Mi <span>Finanzas</span></div>
+      <div class="page-sub" id="db-income-label">—</div>
+    </div>
+    <div class="head-actions">
+      <button class="btn-icon" id="theme-toggle" title="Cambiar tema">🌙</button>
+    </div>
+  </div>
+
+  <div class="dashboard-hero">
+    <div class="dh-label">Gastado este mes</div>
+    <div class="dh-amount"><sup>RD$</sup><span id="db-spent">0</span></div>
+    <div class="dh-amount" style="font-size:14px;color:var(--muted);font-weight:400;margin-top:2px">de RD$<span id="db-income">0</span></div>
+    <div id="db-remaining" class="dh-sub ok" style="margin-top:6px"></div>
+    <div class="dh-bar-wrap">
+      <div class="dh-bar-labels">
+        <span id="db-bar-pct">0%</span>
+        <span id="db-bar-income">—</span>
+      </div>
+      <div class="dh-bar-track"><div class="dh-bar-fill" id="db-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-val ok" id="db-stat-saved">RD$0</div>
+      <div class="stat-label">Disponible</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-val ok" id="db-stat-over">Ninguna ✓</div>
+      <div class="stat-label">Sobre límite</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-val info" id="db-stat-goals">0 activas</div>
+      <div class="stat-label">Metas ahorro</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏦</div>
+      <div class="stat-val purple" id="db-stat-balance">RD$0</div>
+      <div class="stat-label">Balance total</div>
+    </div>
+  </div>
+
+  <div class="section-title">📊 Gastos por categoría</div>
+  <div class="chart-wrap">
+    <div class="bar-chart" id="db-chart"></div>
+  </div>
+
+  <div class="section-title">🏦 Mis cuentas</div>
+  <div class="accounts-mini" id="db-accounts-mini"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: GASTOS
+════════════════════════════════════════ -->
+<div class="page" id="page-gastos">
+  <div class="sticky-head">
+    <div class="head-left">
+      <div class="page-title">Mis <span>Gastos</span></div>
+    </div>
+    <div class="head-actions" id="gastos-head-actions">
+      <button class="btn-icon" onclick="openModal('modal-reset')" title="Resetear mes">↺</button>
+      <button class="btn btn-primary btn-sm" id="gastos-add-cat-btn" onclick="openAddCategory()">+ Categoría</button>
+    </div>
+  </div>
+
+  <div class="month-nav-row">
+    <button class="month-nav-btn" onclick="changeGastosMonth(-1)">‹</button>
+    <span class="month-nav-label font-d" id="gastos-month-label">—</span>
+    <button class="month-nav-btn" onclick="changeGastosMonth(1)">›</button>
+  </div>
+
+  <div class="income-bar">
+    <div class="ib-left">
+      <div class="ib-label">Ingreso del mes</div>
+      <div class="ib-val" id="gastos-income-val">RD$0</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="gastos-income-edit">✏ Editar</button>
+  </div>
+
+  <div id="gastos-cats"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: METAS
+════════════════════════════════════════ -->
+<div class="page" id="page-metas">
+  <div class="sticky-head">
+    <div class="head-left">
+      <div class="page-title">Mis <span>Metas</span></div>
+      <div class="page-sub">Ahorro con propósito</div>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-primary btn-sm" id="metas-add-btn" onclick="openAddGoal()">+ Meta</button>
+    </div>
+  </div>
+  <div style="height:16px"></div>
+  <div id="metas-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: CUENTAS
+════════════════════════════════════════ -->
+<div class="page" id="page-cuentas">
+  <div class="sticky-head">
+    <div class="head-left">
+      <div class="page-title">Mis <span>Cuentas</span></div>
+      <div class="page-sub" id="cuentas-count">0 cuentas</div>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-primary btn-sm" id="cuentas-add-btn" onclick="openAddAccount()">+ Cuenta</button>
+    </div>
+  </div>
+
+  <div class="total-balance">
+    <div class="tb-label">Balance total</div>
+    <div class="tb-amount" id="cuentas-total">RD$0</div>
+    <div class="tb-sub">Suma de todas tus cuentas</div>
+  </div>
+
+  <div class="section-title">💳 Mis cuentas</div>
+  <div id="cuentas-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: CONSEJOS
+════════════════════════════════════════ -->
+<div class="page" id="page-consejos">
+  <div class="sticky-head">
+    <div class="head-left">
+      <div class="page-title">Con<span>sejos</span></div>
+      <div class="page-sub">Inteligencia financiera</div>
+    </div>
+  </div>
+
+  <div class="tip-hero">
+    <div class="tip-quote" id="tip-quote-text">—</div>
+    <div class="tip-author" id="tip-quote-author">—</div>
+    <div class="tip-refresh">
+      <button class="btn btn-ghost btn-sm" onclick="nextQuote()">↻ Otra frase</button>
+    </div>
+  </div>
+
+  <div class="section-title">📚 Consejos clave</div>
+  <div id="tips-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: NOTAS
+════════════════════════════════════════ -->
+<div class="page" id="page-notas">
+  <div class="sticky-head">
+    <div class="head-left">
+      <div class="page-title">Mis <span>Notas</span></div>
+      <div class="page-sub">Recordatorios rápidos</div>
+    </div>
+  </div>
+
+  <div class="note-input-wrap" style="margin-top:16px">
+    <textarea class="note-textarea" id="nota-textarea" placeholder="Escribe un recordatorio, pendiente o nota rápida...&#10;&#10;Ej: Pagar gym el 5, revisar tarjeta, llamar al médico..."></textarea>
+    <div class="note-footer">
+      <span class="note-footer-left">📌 Toca el pin para fijar notas importantes</span>
+      <button class="btn btn-primary btn-sm" onclick="addNote()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="section-title">📋 Notas guardadas</div>
+  <div id="notas-list"></div>
+</div>
+</div><!-- /.app -->
+
+<!-- ═══════════════════════════════════════
+     MODALS
+════════════════════════════════════════ -->
+
+<!-- MODAL: ADD / EDIT CATEGORY -->
+<div class="modal-overlay" id="modal-cat">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-cat-title">Nueva categoría</div>
+    <div class="modal-sub">Define el nombre, límite mensual, ícono y color</div>
+    <div class="input-group">
+      <label class="input-label">Nombre</label>
+      <input class="input" id="modal-cat-name" type="text" placeholder="Ej: Gasolina, Ropa...">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Límite mensual (DOP)</label>
+      <input class="input" id="modal-cat-budget" type="number" placeholder="Ej: 3000">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Ícono — <span id="modal-cat-icon-sel" style="font-size:18px">📦</span></label>
+      <div class="icon-grid" id="modal-cat-icons"></div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Color</label>
+      <div class="color-row" id="modal-cat-colors"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT INCOME -->
+<div class="modal-overlay" id="modal-income">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Ingreso del mes</div>
+    <div class="modal-sub">¿Cuánto vas a recibir este mes?</div>
+    <div class="input-group">
+      <label class="input-label">Monto (DOP)</label>
+      <input class="input" id="modal-income-val" type="number" placeholder="45000">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIncome()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD / EDIT GOAL -->
+<div class="modal-overlay" id="modal-goal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-goal-title">Nueva meta</div>
+    <div class="modal-sub">¿Para qué estás ahorrando?</div>
+
+    <!-- Image upload -->
+    <div class="input-group">
+      <label class="input-label">Imagen motivacional (opcional)</label>
+      <div class="goal-img-wrap" id="modal-goal-img-wrap" onclick="document.getElementById('modal-goal-img-input').click()">
+        <div class="goal-img-placeholder">
+          <span>🖼️</span>
+          Toca para subir una imagen
+        </div>
+        <button class="goal-img-del" id="modal-goal-img-del" onclick="clearGoalImage(event)">✕</button>
+      </div>
+      <input type="file" id="modal-goal-img-input" accept="image/*" style="display:none" onchange="handleGoalImage(event)">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Nombre</label>
+      <input class="input" id="modal-goal-name" type="text" placeholder="Ej: iPhone, Viaje, Laptop...">
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">Meta (DOP)</label>
+        <input class="input" id="modal-goal-target" type="number" placeholder="42000">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Ya ahorrado</label>
+        <input class="input" id="modal-goal-saved" type="number" placeholder="0">
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Descripción (opcional)</label>
+      <input class="input" id="modal-goal-desc" type="text" placeholder="Ej: Para grabar contenido">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Ícono — <span id="modal-goal-icon-sel" style="font-size:18px">🎯</span></label>
+      <div class="icon-grid" id="modal-goal-icons"></div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Color</label>
+      <div class="color-row" id="modal-goal-colors"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGoal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD / EDIT ACCOUNT -->
+<div class="modal-overlay" id="modal-acc">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-acc-title">Nueva cuenta</div>
+    <div class="modal-sub">Añade una cuenta para rastrear tu balance</div>
+    <div class="input-group">
+      <label class="input-label">Nombre</label>
+      <input class="input" id="modal-acc-name" type="text" placeholder="Ej: Banreservas, Efectivo...">
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">Balance actual (DOP)</label>
+        <input class="input" id="modal-acc-balance" type="number" placeholder="0">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Tipo</label>
+        <select class="input" id="modal-acc-type">
+          <option>Corriente</option>
+          <option>Ahorros</option>
+          <option>Efectivo</option>
+          <option>Tarjeta de crédito</option>
+          <option>Inversión</option>
+          <option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Ícono — <span id="modal-acc-icon-sel" style="font-size:18px">🏦</span></label>
+      <div class="icon-grid" id="modal-acc-icons"></div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Color</label>
+      <div class="color-row" id="modal-acc-colors"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAccount()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RESET MONTH -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">¿Resetear gastos?</div>
+    <div class="modal-sub">Se borrarán todos los gastos del mes actual. Las metas de ahorro y cuentas no se modifican.</div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn" style="flex:1;justify-content:center;background:var(--red);color:#fff" onclick="confirmReset()">Sí, resetear</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+/* ═══════════════════════════════════════
+   TUTORIAL SYSTEM
+════════════════════════════════════════ */
+const TUTORIAL_STEPS = [
+  {
+    page: 'dashboard',
+    target: '.dashboard-hero',
+    title: 'Tu resumen mensual',
+    desc: 'Aquí ves cuánto has gastado vs tu ingreso del mes, con una barra de progreso. Verde = bien, amarillo = cuidado, rojo = excediste.',
+    position: 'below',
+  },
+  {
+    page: 'dashboard',
+    target: '.stats-grid',
+    title: 'Estadísticas rápidas',
+    desc: 'De un vistazo: dinero disponible, cuántas categorías están sobre su límite, tus metas activas y balance total de cuentas.',
+    position: 'below',
+  },
+  {
+    page: 'gastos',
+    target: '.income-bar',
+    title: 'Ajusta tu ingreso',
+    desc: 'Toca "✏ Editar" para cambiar tu ingreso mensual. Si un mes ganas diferente, actualízalo aquí para que el cálculo sea preciso.',
+    position: 'below',
+  },
+  {
+    page: 'gastos',
+    target: '#gastos-head-actions',
+    title: 'Crea tus categorías',
+    desc: 'Con "+ Categoría" añades nuevas categorías personalizadas: nombre, límite, ícono y color. El botón ↺ resetea los gastos al cambiar de mes.',
+    position: 'below',
+  },
+  {
+    page: 'gastos',
+    target: '#gastos-cats',
+    title: 'Registra cada gasto',
+    desc: 'Toca cualquier categoría para expandirla. Escribe la descripción, el monto y toca +. La barra se actualiza en tiempo real y te avisa si estás cerca del límite.',
+    position: 'center',
+    fallback: '.income-bar',
+  },
+  {
+    page: 'metas',
+    target: '#metas-add-btn',
+    title: 'Crea metas de ahorro',
+    desc: 'Define para qué estás ahorrando: ponle nombre, imagen motivacional, monto objetivo y cuánto ya tienes. Puedes abonar cada vez que guardes algo.',
+    position: 'below',
+  },
+  {
+    page: 'cuentas',
+    target: '#cuentas-add-btn',
+    title: 'Registra tus cuentas',
+    desc: 'Añade tus cuentas bancarias, efectivo o tarjetas con su balance actual. La app suma todo para mostrarte tu patrimonio total.',
+    position: 'below',
+  },
+  {
+    page: 'notas',
+    target: '.note-input-wrap',
+    title: 'Notas y recordatorios',
+    desc: 'Escribe pendientes financieros rápidos: pagar algo, revisar una cuenta, un recordatorio de fecha. Fíjalos con 📌 para que aparezcan primero.',
+    position: 'below',
+  },
+];
+
+let tutStep = 0;
+let tutActive = false;
+
+function startTutorial() {
+  tutStep = 0;
+  tutActive = true;
+  document.getElementById('tutorial-overlay').classList.add('active');
+  showTutStep();
+}
+
+function skipTutorial() {
+  tutActive = false;
+  document.getElementById('tutorial-overlay').classList.remove('active');
+  clearSpotlight();
+}
+
+function nextTutorialStep() {
+  tutStep++;
+  if (tutStep >= TUTORIAL_STEPS.length) {
+    skipTutorial();
+    toast('¡Tutorial completado! Ya sabes usar la app 🎉', 'success');
+    return;
+  }
+  showTutStep();
+}
+
+function showTutStep() {
+  const step = TUTORIAL_STEPS[tutStep];
+  const total = TUTORIAL_STEPS.length;
+
+  // Navigate if needed
+  if (step.page !== currentPage) {
+    navigate(step.page);
+  }
+
+  // Update bubble content
+  document.getElementById('tut-step-label').textContent = `Paso ${tutStep+1} de ${total}`;
+  document.getElementById('tut-title').textContent = step.title;
+  document.getElementById('tut-desc').textContent = step.desc;
+  document.getElementById('tut-next').textContent = tutStep === total-1 ? '¡Listo! ✓' : 'Siguiente →';
+
+  // Dots
+  const dotsEl = document.getElementById('tut-dots');
+  dotsEl.innerHTML = Array.from({length: total}, (_,i) =>
+    `<div class="tut-dot${i===tutStep?' active':''}"></div>`
+  ).join('');
+
+  // Spotlight — delay to let page render
+  setTimeout(() => positionTutorial(step), 80);
+}
+
+function positionTutorial(step) {
+  const spotlight = document.getElementById('tut-spotlight');
+  const bubble = document.getElementById('tut-bubble');
+
+  let el = document.querySelector(step.target);
+  if (!el && step.fallback) el = document.querySelector(step.fallback);
+
+  if (!el || step.position === 'center') {
+    // Center bubble, no spotlight
+    spotlight.style.opacity = '0';
+    bubble.style.left = '20px';
+    bubble.style.right = '20px';
+    bubble.style.top = '50%';
+    bubble.style.transform = 'translateY(-50%)';
+    bubble.style.bottom = '';
+    return;
+  }
+
+  const rect = el.getBoundingClientRect();
+  const pad = 8;
+
+  // Spotlight
+  spotlight.style.left   = (rect.left - pad) + 'px';
+  spotlight.style.top    = (rect.top - pad) + 'px';
+  spotlight.style.width  = (rect.width + pad*2) + 'px';
+  spotlight.style.height = (rect.height + pad*2) + 'px';
+  spotlight.style.opacity = '1';
+
+  // Bubble positioning
+  const bubbleW = Math.min(300, window.innerWidth - 40);
+  const spaceBelow = window.innerHeight - rect.bottom - pad;
+  const spaceAbove = rect.top - pad;
+
+  bubble.style.transform = '';
+  bubble.style.width = bubbleW + 'px';
+
+  // Horizontal center on element
+  let left = rect.left + rect.width/2 - bubbleW/2;
+  left = Math.max(16, Math.min(left, window.innerWidth - bubbleW - 16));
+  bubble.style.left = left + 'px';
+  bubble.style.right = '';
+
+  if (spaceBelow > 180 || spaceBelow > spaceAbove) {
+    bubble.style.top = (rect.bottom + pad + 12) + 'px';
+    bubble.style.bottom = '';
+  } else {
+    bubble.style.bottom = (window.innerHeight - rect.top + pad + 12) + 'px';
+    bubble.style.top = '';
+  }
+}
+
+function clearSpotlight() {
+  const sp = document.getElementById('tut-spotlight');
+  sp.style.opacity = '0';
+}
+
+// Reposition on resize/scroll
+window.addEventListener('resize', () => { if (tutActive) showTutStep(); });
+
+/* ═══════════════════════════════════════
+   GOAL IMAGE HANDLING
+════════════════════════════════════════ */
+let pendingGoalImage = null; // base64 string
+
+function handleGoalImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast('Imagen muy grande (máx 2MB)','error'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    pendingGoalImage = ev.target.result;
+    const wrap = document.getElementById('modal-goal-img-wrap');
+    // Remove placeholder, show image
+    wrap.innerHTML = `
+      <img src="${pendingGoalImage}" alt="Meta">
+      <button class="goal-img-del" style="opacity:1" onclick="clearGoalImage(event)">✕</button>
+    `;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearGoalImage(e) {
+  e.stopPropagation();
+  pendingGoalImage = null;
+  const wrap = document.getElementById('modal-goal-img-wrap');
+  wrap.innerHTML = `
+    <div class="goal-img-placeholder">
+      <span>🖼️</span>
+      Toca para subir una imagen
+    </div>
+    <button class="goal-img-del" id="modal-goal-img-del" onclick="clearGoalImage(event)">✕</button>
+  `;
+  document.getElementById('modal-goal-img-input').value = '';
+}
+
+/* ═══════════════════════════════════════
+   PATCH: saveGoal to include image
+════════════════════════════════════════ */
+const _origSaveGoal = window.saveGoal;
+window.saveGoal = function() {
+  // Inject image into goal before save
+  const origPush = Array.prototype.push;
+  // We intercept after saveGoal runs
+  const name   = document.getElementById('modal-goal-name').value.trim();
+  const target = parseFloat(document.getElementById('modal-goal-target').value);
+  const saved  = parseFloat(document.getElementById('modal-goal-saved').value)||0;
+  const desc   = document.getElementById('modal-goal-desc').value.trim();
+  if (!name)   { toast('Ingresa un nombre','error'); return; }
+  if (!target) { toast('Ingresa una meta válida','error'); return; }
+
+  if (editTarget) {
+    const g = state.goals.find(g=>g.id===editTarget);
+    Object.assign(g, {name, target, saved, desc, icon:selectedGoalIcon, color:selectedGoalColor});
+    if (pendingGoalImage !== null) g.image = pendingGoalImage;
+  } else {
+    const ng = { id:uid(), name, icon:selectedGoalIcon, color:selectedGoalColor, target, saved, desc, status:'active' };
+    if (pendingGoalImage) ng.image = pendingGoalImage;
+    state.goals.push(ng);
+  }
+  saveState();
+  pendingGoalImage = null;
+  closeModal();
+  renderMetas();
+  toast(editTarget ? 'Meta actualizada ✓' : 'Meta creada ✓', 'success');
+};
+
+/* ═══════════════════════════════════════
+   PATCH: renderMetas to show image
+════════════════════════════════════════ */
+const _origRenderMetas = window.renderMetas;
+window.renderMetas = function() {
+  const container = document.getElementById('metas-list');
+  container.innerHTML = '';
+
+  if (!state.goals.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Sin metas de ahorro</div><div class="empty-text">Crea tu primera meta con el botón +</div></div>`;
+    return;
+  }
+
+  state.goals.forEach(g => {
+    const pct = g.target > 0 ? Math.min((g.saved/g.target)*100,100) : 0;
+    const missing = Math.max(g.target - g.saved, 0);
+    const isDone = g.saved >= g.target;
+
+    const div = document.createElement('div');
+    div.className = `goal-card${isDone?' done':''}`;
+    div.innerHTML = `
+      ${g.image ? `<div class="goal-card-img"><img src="${g.image}" alt="${g.name}"></div>` : ''}
+      <div class="gc-header">
+        <div class="gc-left">
+          <div class="gc-icon-name"><span class="gc-icon">${g.icon}</span><span class="gc-name">${g.name}</span></div>
+          <div class="gc-desc">${g.desc||''}</div>
+        </div>
+        <span class="gc-badge ${g.status}">${isDone?'✅ Completada':g.status==='paused'?'⏸ Pausada':'▶ Activa'}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${isDone?'#c8ff5a':g.color}"></div></div>
+      <div class="gc-amounts">
+        <span>Ahorrado: <strong style="color:${g.color}">${fmtFull(g.saved)}</strong></span>
+        <span>Meta: ${fmtFull(g.target)}</span>
+      </div>
+      <div class="gc-amounts mt-4">
+        <span class="text-muted">${Math.round(pct)}% completado</span>
+        <span class="text-muted">${isDone ? '🎉 Meta alcanzada' : 'Faltan: '+fmtFull(missing)}</span>
+      </div>
+      ${!isDone ? `
+      <div class="gc-add-row">
+        <input class="input" id="goal-add-${g.id}" type="number" placeholder="Abonar monto...">
+        <button class="btn btn-primary btn-sm" onclick="addToGoal('${g.id}')">+ Abonar</button>
+      </div>` : ''}
+      <div class="gc-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editGoal('${g.id}')">✏ Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleGoalStatus('${g.id}')">${g.status==='paused'?'▶ Reanudar':'⏸ Pausar'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteGoal('${g.id}')">🗑</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+};
+
+/* ═══════════════════════════════════════
+   PATCH: editGoal to restore image
+════════════════════════════════════════ */
+const _origEditGoal = window.editGoal;
+window.editGoal = function(id) {
+  const g = state.goals.find(g=>g.id===id);
+  if (!g) return;
+  editTarget = id;
+  pendingGoalImage = g.image || null;
+
+  document.getElementById('modal-goal-title').textContent = 'Editar meta';
+  document.getElementById('modal-goal-name').value = g.name;
+  document.getElementById('modal-goal-target').value = g.target;
+  document.getElementById('modal-goal-saved').value = g.saved;
+  document.getElementById('modal-goal-desc').value = g.desc||'';
+  document.getElementById('modal-goal-icon-sel').textContent = g.icon;
+  selectedGoalIcon = g.icon;
+  selectedGoalColor = g.color;
+
+  // Restore image preview
+  const wrap = document.getElementById('modal-goal-img-wrap');
+  if (g.image) {
+    wrap.innerHTML = `
+      <img src="${g.image}" alt="Meta">
+      <button class="goal-img-del" style="opacity:1" onclick="clearGoalImage(event)">✕</button>
+    `;
+  } else {
+    wrap.innerHTML = `
+      <div class="goal-img-placeholder"><span>🖼️</span>Toca para subir una imagen</div>
+      <button class="goal-img-del" id="modal-goal-img-del" onclick="clearGoalImage(event)">✕</button>
+    `;
+  }
+
+  renderGoalIconGrid();
+  renderGoalColorSwatches();
+  openModal('modal-goal');
+};
+
+/* ═══════════════════════════════════════
+   FIRST LAUNCH: Auto-start tutorial
+════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  if (!localStorage.getItem('tut_done_v1')) {
+    setTimeout(() => {
+      startTutorial();
+      localStorage.setItem('tut_done_v1','1');
+    }, 800);
+  }
+});
+</script>
+</body>
+</html>
