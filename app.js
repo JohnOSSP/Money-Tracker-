@@ -50,7 +50,7 @@ function defaultState() {
   return {
     theme: 'dark',
     income: {},          // { 'YYYY-MM': number }
-    defaultIncome: 45000,
+    defaultIncome: 0,
     categories: defaultCategories(),
     expenses: {},        // { 'YYYY-MM': { catId: [{desc,amount,date}] } }
     goals: defaultGoals(),
@@ -62,30 +62,15 @@ function defaultState() {
 }
 
 function defaultCategories() {
-  return [
-    { id:'especialista', name:'Especialista DE', icon:'🩺', color:'#f55a8a', budget:13000, group:'salud' },
-    { id:'gym',          name:'Gym',              icon:'💪', color:'#f55a8a', budget:1400,  group:'salud' },
-    { id:'nutricion',    name:'Nutrición & Suplementos', icon:'🥗', color:'#f5c85a', budget:6000, group:'salud' },
-    { id:'skincare',     name:'Skincare',         icon:'☀️', color:'#f5c85a', budget:1500,  group:'salud' },
-    { id:'pasajes',      name:'Pasajes',          icon:'🚍', color:'#f5c85a', budget:5000,  group:'vida' },
-    { id:'ahorro',       name:'Ahorro General',   icon:'🏦', color:'#c8ff5a', budget:4100,  group:'ahorro' },
-    { id:'equipo',       name:'Equipo Contenido', icon:'📱', color:'#c8ff5a', budget:9000,  group:'ahorro' },
-    { id:'social',       name:'Salidas',          icon:'🎉', color:'#5af5c8', budget:5000,  group:'social' },
-  ];
+  return [];
 }
 
 function defaultGoals() {
-  return [
-    { id:'iphone', name:'iPhone 15 Pro Max + Micrófono', icon:'📱', color:'#c8ff5a', target:42000, saved:0, desc:'Equipo para contenido', status:'active' },
-    { id:'emergencia', name:'Fondo de Emergencia', icon:'🛡️', color:'#5af5c8', target:90000, saved:0, desc:'3 meses de gastos básicos', status:'active' },
-  ];
+  return [];
 }
 
 function defaultAccounts() {
-  return [
-    { id:'banreservas', name:'Banreservas', icon:'🏦', color:'#5af5c8', type:'Corriente', balance:0 },
-    { id:'efectivo',    name:'Efectivo',    icon:'💵', color:'#c8ff5a', type:'Efectivo',  balance:0 },
-  ];
+  return [];
 }
 
 function loadState() {
