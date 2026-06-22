@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#0c0b0a">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon.svg">
 <title>FinanzasApp</title>
@@ -73,7 +73,7 @@
 .tut-dot.active { background: var(--accent); width: 16px; border-radius: 3px; }
 .tut-next {
   font-family: var(--font-d); font-size: 12px; font-weight: 700;
-  background: var(--accent); color: #0a0a0f;
+  background: var(--accent); color: #0c0b0a;
   border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer;
   transition: opacity .2s;
 }
@@ -87,15 +87,16 @@
 
 /* FAB tutorial button */
 .fab-tutorial {
-  position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 16px); right: 16px;
+  position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 18px); left: 16px;
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--card); border: 1px solid var(--border2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; cursor: pointer; z-index: 50;
+  color: var(--muted);
+  cursor: pointer; z-index: 50;
   box-shadow: 0 4px 20px rgba(0,0,0,.4);
   transition: all var(--trans);
 }
-.fab-tutorial:hover { border-color: var(--accent); transform: scale(1.05); }
+.fab-tutorial:hover { border-color: var(--accent); color:var(--accent); transform: scale(1.05); }
 
 /* ── GOAL IMAGE UPLOAD ─── */
 .goal-img-wrap {
@@ -139,11 +140,40 @@
 </head>
 <body>
 
+<!-- SVG ICON SPRITE -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="ic-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v9a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1v-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="ic-coins" viewBox="0 0 24 24"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 7.3A6 6 0 1 1 14.6 17" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></symbol>
+<symbol id="ic-bank" viewBox="0 0 24 24"><path d="M4 10 12 4l8 6M5 10h14v2H5zM6 12v7h2v-7M11 12v7h2v-7M16 12v7h2v-7M4 21h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8 13a4 4 0 1 1 8 0c0 2-1.5 2.7-2 4.2H10c-.5-1.5-2-2.2-2-4.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="ic-note" viewBox="0 0 24 24"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M14 4v4h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10h6M8 13h8M8 16h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+<symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v2.3M12 19.2v2.3M4.4 4.4l1.6 1.6M18 18l1.6 1.6M2.5 12h2.3M19.2 12h2.3M4.4 19.6 6 18M18 6l1.6-1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="ic-warn" viewBox="0 0 24 24"><path d="M12 4 22 20H2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/></symbol>
+<symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3M3 7v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="16.5" cy="14" r="1.3" fill="currentColor"/></symbol>
+<symbol id="ic-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-4 4v-4H4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9" cy="10.5" r="1" fill="currentColor"/><circle cx="13" cy="10.5" r="1" fill="currentColor"/><circle cx="17" cy="10.5" r="1" fill="currentColor"/></symbol>
+<symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="ic-edit" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="ic-trash" viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+<symbol id="ic-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-6.5 16-2.5-7-7-2.5Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 3v2.3M12 18.7V21M3 12h2.3M18.7 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M5.6 18.4l1.6-1.6M16.8 7.2l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="ic-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 9.3a2.5 2.5 0 1 1 3.7 2.6c-.8.5-1.2 1-1.2 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></symbol>
+</defs>
+</svg>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <!-- TUTORIAL FAB -->
-<button class="fab-tutorial" id="fab-tutorial" onclick="startTutorial()" title="Tutorial">❓</button>
+<button class="fab-tutorial" id="fab-tutorial" onclick="startTutorial()" title="Tutorial"><svg class="icon"><use href="#ic-help"/></svg></button>
+
+<!-- ASSISTANT FAB -->
+<button class="fab-assistant" id="fab-assistant" onclick="openAssistant()" title="Asistente financiero">
+  <svg class="icon"><use href="#ic-chat"/></svg>
+  <span class="fab-ping" id="fab-ping"></span>
+</button>
 
 <!-- ═══════════════════════════════════════
      TUTORIAL OVERLAY
@@ -169,32 +199,32 @@
 <nav class="nav" id="main-nav">
   <div class="nav-inner">
     <button class="nav-btn active" data-page="dashboard" onclick="navigate('dashboard')">
-      <span class="nav-icon">📊</span>
+      <span class="nav-icon"><svg class="icon"><use href="#ic-home"/></svg></span>
       <span>Inicio</span>
       <span class="nav-dot"></span>
     </button>
     <button class="nav-btn" data-page="gastos" onclick="navigate('gastos')">
-      <span class="nav-icon">💸</span>
+      <span class="nav-icon"><svg class="icon"><use href="#ic-coins"/></svg></span>
       <span>Gastos</span>
       <span class="nav-dot"></span>
     </button>
     <button class="nav-btn" data-page="metas" onclick="navigate('metas')">
-      <span class="nav-icon">🎯</span>
+      <span class="nav-icon"><svg class="icon"><use href="#ic-target"/></svg></span>
       <span>Metas</span>
       <span class="nav-dot"></span>
     </button>
     <button class="nav-btn" data-page="cuentas" onclick="navigate('cuentas')">
-      <span class="nav-icon">🏦</span>
+      <span class="nav-icon"><svg class="icon"><use href="#ic-bank"/></svg></span>
       <span>Cuentas</span>
       <span class="nav-dot"></span>
     </button>
     <button class="nav-btn" data-page="consejos" onclick="navigate('consejos')">
-      <span class="nav-icon">💡</span>
+      <span class="nav-icon"><svg class="icon"><use href="#ic-bulb"/></svg></span>
       <span>Consejos</span>
       <span class="nav-dot"></span>
     </button>
     <button class="nav-btn" data-page="notas" onclick="navigate('notas')">
-      <span class="nav-icon">📝</span>
+      <span class="nav-icon"><svg class="icon"><use href="#ic-note"/></svg></span>
       <span>Notas</span>
       <span class="nav-dot"></span>
     </button>
@@ -212,9 +242,12 @@
       <div class="page-sub" id="db-income-label">—</div>
     </div>
     <div class="head-actions">
-      <button class="btn-icon" id="theme-toggle" title="Cambiar tema">🌙</button>
+      <button class="btn-icon" id="assistant-settings-btn" onclick="openAssistantSettings()" title="Configurar asistente"><svg class="icon"><use href="#ic-gear"/></svg></button>
+      <button class="btn-icon" id="theme-toggle" title="Cambiar tema"><svg class="icon"><use href="#ic-moon"/></svg></button>
     </div>
   </div>
+
+  <div class="alert-banner" id="budget-alert-banner" style="display:none"></div>
 
   <div class="dashboard-hero">
     <div class="dh-label">Gastado este mes</div>
@@ -232,33 +265,34 @@
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-icon">💰</div>
+      <div class="stat-icon"><svg class="icon"><use href="#ic-wallet"/></svg></div>
       <div class="stat-val ok" id="db-stat-saved">RD$0</div>
       <div class="stat-label">Disponible</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">⚠️</div>
+      <div class="stat-icon"><svg class="icon"><use href="#ic-warn"/></svg></div>
       <div class="stat-val ok" id="db-stat-over">Ninguna ✓</div>
       <div class="stat-label">Sobre límite</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">🎯</div>
+      <div class="stat-icon"><svg class="icon"><use href="#ic-target"/></svg></div>
       <div class="stat-val info" id="db-stat-goals">0 activas</div>
       <div class="stat-label">Metas ahorro</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">🏦</div>
+      <div class="stat-icon"><svg class="icon"><use href="#ic-bank"/></svg></div>
       <div class="stat-val purple" id="db-stat-balance">RD$0</div>
       <div class="stat-label">Balance total</div>
     </div>
   </div>
 
-  <div class="section-title">📊 Gastos por categoría</div>
+  <div class="section-title">Gastos por categoría</div>
   <div class="chart-wrap">
     <div class="bar-chart" id="db-chart"></div>
   </div>
 
-  <div class="section-title">🏦 Mis cuentas</div>
+
+  <div class="section-title">Mis cuentas</div>
   <div class="accounts-mini" id="db-accounts-mini"></div>
 </div>
 
@@ -330,7 +364,7 @@
     <div class="tb-sub">Suma de todas tus cuentas</div>
   </div>
 
-  <div class="section-title">💳 Mis cuentas</div>
+  <div class="section-title">Mis cuentas</div>
   <div id="cuentas-list"></div>
 </div>
 
@@ -353,7 +387,7 @@
     </div>
   </div>
 
-  <div class="section-title">📚 Consejos clave</div>
+  <div class="section-title">Consejos clave</div>
   <div id="tips-list"></div>
 </div>
 
@@ -376,7 +410,7 @@
     </div>
   </div>
 
-  <div class="section-title">📋 Notas guardadas</div>
+  <div class="section-title">Notas guardadas</div>
   <div id="notas-list"></div>
 </div>
 </div><!-- /.app -->
@@ -534,7 +568,58 @@
     <div class="modal-sub">Se borrarán todos los gastos del mes actual. Las metas de ahorro y cuentas no se modifican.</div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn" style="flex:1;justify-content:center;background:var(--red);color:#fff" onclick="confirmReset()">Sí, resetear</button>
+      <button class="btn" style="flex:1;justify-content:center;background:var(--danger);color:#fff" onclick="confirmReset()">Sí, resetear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ASISTENTE FINANCIERO — CHAT
+════════════════════════════════════════ -->
+<div class="assist-overlay" id="assist-overlay">
+  <div class="assist-panel">
+    <div class="assist-head">
+      <div class="assist-head-info">
+        <div class="assist-head-title">Asistente financiero</div>
+        <div class="assist-head-sub" id="assist-head-sub">Conectado a Gemini · gratis</div>
+      </div>
+      <div class="assist-head-actions">
+        <button class="btn-icon" onclick="openAssistantSettings()" title="Configurar"><svg class="icon"><use href="#ic-gear"/></svg></button>
+        <button class="btn-icon" onclick="closeAssistant()" title="Cerrar"><svg class="icon"><use href="#ic-close"/></svg></button>
+      </div>
+    </div>
+    <div class="assist-body" id="assist-body"></div>
+    <div class="assist-input-row">
+      <input class="input assist-input" id="assist-input" type="text" placeholder="Pregúntale algo a tu asistente..." onkeydown="if(event.key==='Enter')sendAssistantMessage()">
+      <button class="assist-send-btn" onclick="sendAssistantMessage()"><svg class="icon"><use href="#ic-send"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ASISTENTE — CONFIGURACIÓN -->
+<div class="modal-overlay" id="modal-assist-settings">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Configurar asistente</div>
+    <div class="modal-sub">Tu asistente usa la API gratuita de Google Gemini. La clave se guarda solo en este dispositivo (en el navegador), nunca se sube a GitHub ni se comparte con nadie más.</div>
+    <div class="input-group">
+      <label class="input-label">API Key de Gemini (gratis)</label>
+      <input class="input" id="assist-apikey-input" type="password" placeholder="Pega aquí tu API key...">
+    </div>
+    <div class="assist-help-link">
+      ¿No tienes una? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Consigue una gratis en Google AI Studio →</a>
+    </div>
+    <div class="input-group mt-12">
+      <label class="input-label">Umbral de alerta de ritmo de gasto</label>
+      <select class="input" id="assist-threshold-input">
+        <option value="0.15">Sensible — avisa apenas me adelanto</option>
+        <option value="0.25" selected>Normal — avisa si me adelanto bastante</option>
+        <option value="0.4">Relajado — avisa solo si es grave</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveAssistantSettings()">Guardar</button>
     </div>
   </div>
 </div>
@@ -791,7 +876,7 @@ window.renderMetas = function() {
   container.innerHTML = '';
 
   if (!state.goals.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Sin metas de ahorro</div><div class="empty-text">Crea tu primera meta con el botón +</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#ic-target"/></svg></div><div class="empty-title">Sin metas de ahorro</div><div class="empty-text">Crea tu primera meta con el botón +</div></div>`;
     return;
   }
 
@@ -811,7 +896,7 @@ window.renderMetas = function() {
         </div>
         <span class="gc-badge ${g.status}">${isDone?'✅ Completada':g.status==='paused'?'⏸ Pausada':'▶ Activa'}</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${isDone?'#c8ff5a':g.color}"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${isDone?'#8fae8a':g.color}"></div></div>
       <div class="gc-amounts">
         <span>Ahorrado: <strong style="color:${g.color}">${fmtFull(g.saved)}</strong></span>
         <span>Meta: ${fmtFull(g.target)}</span>

@@ -8,7 +8,7 @@ const STORE_KEY = 'finanzasApp_v1';
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const ACCOUNT_TYPES = ['Corriente','Ahorros','Efectivo','Tarjeta de crédito','Inversión','Otro'];
 
-const COLORS = ['#c8ff5a','#5af5c8','#f55a8a','#f5c85a','#a78bfa','#60a5fa','#fb923c','#34d399','#f472b6','#94a3b8'];
+const COLORS = ['#d99a5b','#7fa3ad','#c96a6a','#d9ad5b','#a594c9','#60a5fa','#fb923c','#34d399','#f472b6','#94a3b8'];
 
 const ICONS = ['💰','🏦','💳','🪙','💵','📱','🚍','🥗','💪','🩺','☀️','🎉','🎓','✈️','🏠','🛒','⚡','🎮','📚','🎵','🐶','👗','💊','🧴','🍕','☕','🏋️','💻','🔧','🎯'];
 
@@ -58,6 +58,14 @@ function defaultState() {
     notes: [],
     openCards: [],
     quoteIndex: 0,
+    assistant: {
+      apiKey: '',
+      threshold: 0.25,
+      lastAlertDate: {},   // { catId: 'YYYY-MM-DD' } last day an alert fired for this category
+      lastIncomeAlertDate: '',
+      history: [],         // persisted chat messages [{role:'user'|'bot', text}]
+      dismissedBannerKey: '' // signal key currently dismissed, to avoid re-showing same banner same day
+    },
   };
 }
 
@@ -199,6 +207,8 @@ function renderDashboard() {
   const isWarn = pct >= 80;
   const isOver = spent > income;
 
+  checkBudgetAlerts();
+
   // Hero
   document.getElementById('db-income-label').textContent = monthLabel(mk);
   document.getElementById('db-spent').textContent = fmt(spent);
@@ -242,7 +252,7 @@ function renderDashboardChart(mk) {
     const spent = getCatSpent(cat.id, mk);
     const pct = (spent/maxSpent)*100;
     const isOver = spent > cat.budget;
-    const color = isOver ? '#f55a8a' : cat.color;
+    const color = isOver ? '#c96a6a' : cat.color;
     return `<div class="bc-row">
       <span class="bc-label">${cat.icon} ${cat.name}</span>
       <div class="bc-track"><div class="bc-fill" style="width:${pct}%;background:${color}"></div></div>
@@ -286,7 +296,7 @@ function renderGastos() {
   container.innerHTML = '';
 
   if (!state.categories.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-title">Sin categorías</div><div class="empty-text">Crea tu primera categoría con el botón +</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#ic-coins"/></svg></div><div class="empty-title">Sin categorías</div><div class="empty-text">Crea tu primera categoría con el botón +</div></div>`;
     return;
   }
 
@@ -299,7 +309,7 @@ function renderGastos() {
     const isOpen = openCards.has(cat.id);
     const exps = (getExpenses(gastosMonth)[cat.id] || []);
     const statusClass = isOver ? 'danger' : isNear ? 'warn' : 'ok';
-    const barColor = isOver ? '#f55a8a' : isNear ? '#f5c85a' : cat.color;
+    const barColor = isOver ? '#c96a6a' : isNear ? '#d9ad5b' : cat.color;
 
     const div = document.createElement('div');
     div.className = `cat-card${isOver?' over':isNear?' near':''}${isOpen?' open':''}`;
@@ -388,6 +398,7 @@ function addExpense(catId) {
   toast(`+${fmtFull(amount)} registrado ✓`, 'success');
   // Keep open
   openCards.add(catId);
+  checkBudgetAlerts();
 }
 
 function deleteExpense(catId, idx) {
@@ -478,7 +489,7 @@ function renderMetas() {
   container.innerHTML = '';
 
   if (!state.goals.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Sin metas de ahorro</div><div class="empty-text">Crea tu primera meta con el botón +</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#ic-target"/></svg></div><div class="empty-title">Sin metas de ahorro</div><div class="empty-text">Crea tu primera meta con el botón +</div></div>`;
     return;
   }
 
@@ -498,7 +509,7 @@ function renderMetas() {
         </div>
         <span class="gc-badge ${g.status}">${isDone?'✅ Completada':g.status==='paused'?'⏸ Pausada':'▶ Activa'}</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${isDone?'#c8ff5a':g.color}"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${isDone?'#8fae8a':g.color}"></div></div>
       <div class="gc-amounts">
         <span>Ahorrado: <strong style="color:${g.color}">${fmtFull(g.saved)}</strong></span>
         <span>Meta: ${fmtFull(g.target)}</span>
@@ -613,7 +624,7 @@ function renderCuentas() {
   container.innerHTML = '';
 
   if (!state.accounts.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏦</div><div class="empty-title">Sin cuentas</div><div class="empty-text">Añade tus cuentas para ver tu balance total</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#ic-bank"/></svg></div><div class="empty-title">Sin cuentas</div><div class="empty-text">Añade tus cuentas para ver tu balance total</div></div>`;
     return;
   }
 
@@ -629,7 +640,7 @@ function renderCuentas() {
       <div class="acc-balance" style="color:${acc.color}">${fmtFull(acc.balance)}</div>
       <div class="acc-actions">
         <button class="btn-icon" onclick="editAccount('${acc.id}')" title="Editar">✏</button>
-        <button class="btn-icon" onclick="deleteAccount('${acc.id}')" title="Eliminar" style="color:var(--red)">🗑</button>
+        <button class="btn-icon" onclick="deleteAccount('${acc.id}')" title="Eliminar" style="color:var(--danger)">🗑</button>
       </div>
     `;
     container.appendChild(div);
@@ -725,7 +736,7 @@ function renderNotas() {
   const notes = [...state.notes].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0));
 
   if (!notes.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">Sin notas</div><div class="empty-text">Escribe una nota rápida arriba</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#ic-note"/></svg></div><div class="empty-title">Sin notas</div><div class="empty-text">Escribe una nota rápida arriba</div></div>`;
     return;
   }
 
@@ -842,7 +853,358 @@ function confirmReset() {
   toast('Gastos del mes reseteados ✓', 'success');
 }
 
-// ── INIT ───────────────────────────────────
+// ══════════════════════════════════════════
+// ASISTENTE FINANCIERO (IA) — gratis vía Gemini
+// ══════════════════════════════════════════
+
+// Frases "de pana" según el tipo de categoría que se está excediendo.
+// Se elige una al azar y se le pasa a la IA como inspiración de tono,
+// no se pega literal (la IA la adapta al contexto real del usuario).
+const BRO_VIBES = [
+  { match: ['novia','pareja','salida','salidas','cita','citas','amor','jamie'],
+    lines: [
+      'Tranquilo, ella valora más el detalle que el costo.',
+      'Una buena conversación vale más que la cuenta de un restaurante caro.',
+      'El gesto pesa más que el precio, no te compliques.',
+    ] },
+  { match: ['comida','restaurante','restaurantes','delivery','food','comer'],
+    lines: [
+      'No es que no puedas disfrutar, es cocinar más esta semana y salir el finde con cabeza fría.',
+      'Un par de días cocinando en casa y el presupuesto respira solo.',
+    ] },
+  { match: ['ropa','tenis','moda','estilo'],
+    lines: [
+      'Tu estilo no se construye en un mes, ve pieza por pieza.',
+      'Lo que no compraste hoy lo puedes comprar mejor el próximo mes, sin culpa.',
+    ] },
+  { match: ['gym','gimnasio','fitness','suplemento','suplementos','proteina','proteína'],
+    lines: [
+      'Invertir en tu cuerpo está bien, solo cuida que no se desborde el resto del mes.',
+    ] },
+  { match: ['perfume','fragancia','fragancias'],
+    lines: [
+      'El negocio de fragancias es inversión, pero que no se mezcle con tu gasto personal.',
+    ] },
+];
+
+function getBroVibe(catName) {
+  const n = (catName||'').toLowerCase();
+  for (const v of BRO_VIBES) {
+    if (v.match.some(k => n.includes(k))) return v.lines[Math.floor(Math.random()*v.lines.length)];
+  }
+  return null;
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Analiza el ritmo de gasto: compara % del mes transcurrido vs % del presupuesto consumido.
+function computeBudgetSignals() {
+  const mk = currentMonth;
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const monthProgress = dayOfMonth / daysInMonth; // 0..1
+  const threshold = (state.assistant && state.assistant.threshold) || 0.25;
+
+  const overBudget = [];
+  const pacing = [];
+
+  state.categories.forEach(cat => {
+    if (!cat.budget || cat.budget <= 0) return;
+    const spent = getCatSpent(cat.id, mk);
+    const pct = spent / cat.budget;
+    if (spent > cat.budget) {
+      overBudget.push({ cat, spent, over: spent - cat.budget, pct });
+    } else if (pct - monthProgress >= threshold && dayOfMonth <= daysInMonth - 5) {
+      // Va muy por delante del ritmo del mes y todavía falta tiempo
+      pacing.push({ cat, spent, pct, monthProgress });
+    }
+  });
+
+  // Ingreso total también puede excederse (todas las categorías sumadas)
+  const income = getIncome(mk);
+  const totalSpent = getTotalSpent(mk);
+  let incomeSignal = null;
+  if (income > 0) {
+    const pct = totalSpent / income;
+    if (totalSpent > income) {
+      incomeSignal = { type:'over', spent: totalSpent, income, over: totalSpent - income };
+    } else if (pct - monthProgress >= threshold && dayOfMonth <= daysInMonth - 5) {
+      incomeSignal = { type:'pace', spent: totalSpent, income, pct, monthProgress };
+    }
+  }
+
+  return { dayOfMonth, daysInMonth, monthProgress, overBudget, pacing, incomeSignal };
+}
+
+function checkBudgetAlerts() {
+  const sig = computeBudgetSignals();
+  const banner = document.getElementById('budget-alert-banner');
+  const ping = document.getElementById('fab-ping');
+  if (!banner) return;
+
+  // Prioridad: presupuesto general excedido > categoría excedida > ritmo acelerado
+  let key = null, html = '', isPace = false, proactiveCat = null;
+
+  if (sig.incomeSignal && sig.incomeSignal.type === 'over') {
+    key = 'income-over-' + todayISO();
+    html = bannerMarkup(
+      `Excediste tu presupuesto del mes`,
+      `Llevas gastado ${fmtFull(sig.incomeSignal.spent)} de ${fmtFull(sig.incomeSignal.income)} y todavía estamos a día ${sig.dayOfMonth} de ${sig.daysInMonth}.`,
+      false
+    );
+  } else if (sig.overBudget.length) {
+    const top = sig.overBudget.sort((a,b)=>b.over-a.over)[0];
+    key = 'cat-over-' + top.cat.id + '-' + todayISO();
+    proactiveCat = top.cat;
+    html = bannerMarkup(
+      `Excediste el límite de "${top.cat.name}"`,
+      `Llevas ${fmtFull(top.spent)}, ${fmtFull(top.over)} por encima del límite de ${fmtFull(top.cat.budget)}.`,
+      false
+    );
+  } else if (sig.incomeSignal && sig.incomeSignal.type === 'pace') {
+    key = 'income-pace-' + todayISO();
+    isPace = true;
+    html = bannerMarkup(
+      `Vas muy rápido con tu presupuesto`,
+      `A día ${sig.dayOfMonth} de ${sig.daysInMonth} ya gastaste ${Math.round(sig.incomeSignal.pct*100)}% del mes. A este ritmo te vas a quedar corto antes de fin de mes.`,
+      true
+    );
+  } else if (sig.pacing.length) {
+    const top = sig.pacing.sort((a,b)=>(b.pct-b.monthProgress)-(a.pct-a.monthProgress))[0];
+    key = 'cat-pace-' + top.cat.id + '-' + todayISO();
+    isPace = true;
+    proactiveCat = top.cat;
+    html = bannerMarkup(
+      `"${top.cat.name}" se está acelerando`,
+      `Ya usaste ${Math.round(top.pct*100)}% del límite y apenas vamos por el día ${sig.dayOfMonth} de ${sig.daysInMonth}.`,
+      true
+    );
+  }
+
+  if (!key) { banner.style.display = 'none'; if (ping) ping.classList.remove('show'); return; }
+
+  // Evitar repetir el mismo banner si ya lo cerró hoy
+  if (state.assistant.dismissedBannerKey === key) {
+    banner.style.display = 'none';
+  } else {
+    banner.className = 'alert-banner' + (isPace ? ' pace' : '');
+    banner.innerHTML = html;
+    banner.style.display = 'flex';
+    document.getElementById('alert-banner-dismiss-btn')?.addEventListener('click', () => dismissAlertBanner(key));
+    document.getElementById('alert-banner-chat-btn')?.addEventListener('click', () => openAssistant(true));
+  }
+
+  if (ping) ping.classList.add('show');
+
+  // Disparo proactivo automático: solo una vez por día por categoría/ingreso, y solo si hay API key configurada
+  const dedupeKey = proactiveCat ? proactiveCat.id : 'income';
+  const lastDate = state.assistant.lastAlertDate[dedupeKey];
+  if (state.assistant.apiKey && lastDate !== todayISO()) {
+    state.assistant.lastAlertDate[dedupeKey] = todayISO();
+    saveState();
+    // Espera breve para no interrumpir justo al guardar el gasto
+    setTimeout(() => triggerProactiveAssistant(proactiveCat, sig), 600);
+  }
+}
+
+function bannerMarkup(title, text, isPace) {
+  return `
+    <div class="alert-banner-icon"><svg class="icon"><use href="#ic-warn"/></svg></div>
+    <div class="alert-banner-body">
+      <div class="alert-banner-title">${title}</div>
+      <div class="alert-banner-text">${text}</div>
+      <div class="alert-banner-actions">
+        <button class="btn btn-primary btn-sm" id="alert-banner-chat-btn">Hablar con el asistente</button>
+        <button class="btn btn-ghost btn-sm" id="alert-banner-dismiss-btn">Ahora no</button>
+      </div>
+    </div>
+    <button class="alert-banner-close" onclick="dismissAlertBanner('${isPace?'pace':'over'}')"><svg class="icon"><use href="#ic-close"/></svg></button>
+  `;
+}
+
+function dismissAlertBanner(key) {
+  state.assistant.dismissedBannerKey = key;
+  saveState();
+  const banner = document.getElementById('budget-alert-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ── CHAT UI ──────────────────────────────────
+function openAssistant(fromBanner=false) {
+  document.getElementById('assist-overlay').classList.add('show');
+  const body = document.getElementById('assist-body');
+  if (!state.assistant.history.length) {
+    appendAssistMsg('bot', `¡Qué tal! Soy tu asistente financiero. Puedo revisar tus categorías, tu presupuesto y darte consejos basados en tus números reales. Pregúntame lo que quieras, o cuéntame qué está pasando con tus gastos.`, false);
+  } else {
+    renderAssistHistory();
+  }
+  if (!state.assistant.apiKey) {
+    appendAssistMsg('bot', `Para que pueda responderte con IA real necesito una API key gratis de Google Gemini. Toca el ⚙️ arriba para configurarla — toma menos de un minuto.`, false);
+  }
+  document.getElementById('fab-ping')?.classList.remove('show');
+  setTimeout(() => body.scrollTop = body.scrollHeight, 50);
+}
+
+function closeAssistant() {
+  document.getElementById('assist-overlay').classList.remove('show');
+}
+
+function renderAssistHistory() {
+  const body = document.getElementById('assist-body');
+  body.innerHTML = state.assistant.history.map(m =>
+    `<div class="assist-msg ${m.role}">${escapeHtml(m.text)}</div>`
+  ).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+
+function appendAssistMsg(role, text, persist=true) {
+  const body = document.getElementById('assist-body');
+  const div = document.createElement('div');
+  div.className = `assist-msg ${role}`;
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  if (persist) {
+    state.assistant.history.push({ role, text });
+    if (state.assistant.history.length > 40) state.assistant.history = state.assistant.history.slice(-40);
+    saveState();
+  }
+}
+
+function showTyping() {
+  const body = document.getElementById('assist-body');
+  const div = document.createElement('div');
+  div.className = 'assist-msg bot typing';
+  div.id = 'assist-typing';
+  div.innerHTML = '<span class="assist-dot"></span><span class="assist-dot"></span><span class="assist-dot"></span>';
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function hideTyping() {
+  document.getElementById('assist-typing')?.remove();
+}
+
+function sendAssistantMessage() {
+  const input = document.getElementById('assist-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendAssistMsg('user', text);
+  runAssistant(text);
+}
+
+function triggerProactiveAssistant(cat, sig) {
+  openAssistant(true);
+  const prompt = cat
+    ? `[Mensaje automático del sistema, no del usuario] Detecté que la categoría "${cat.name}" está excedida o adelantada de ritmo. Abre la conversación tú, preguntando qué está pasando con esa categoría, en tono cercano, y da un consejo financiero corto basado en los números reales.`
+    : `[Mensaje automático del sistema, no del usuario] Detecté que el presupuesto general del mes está excedido o muy adelantado de ritmo respecto al día del mes. Abre la conversación tú preguntando qué está pasando, en tono cercano, y da un consejo financiero corto.`;
+  runAssistant(prompt, true);
+}
+
+async function runAssistant(userText, isProactive=false) {
+  showTyping();
+  try {
+    const reply = await callGeminiAPI(userText, isProactive);
+    hideTyping();
+    appendAssistMsg('bot', reply);
+  } catch (err) {
+    hideTyping();
+    const msg = (err && err.message) ? err.message : 'No pude conectar con el asistente.';
+    appendAssistMsg('bot', `⚠ ${msg}`);
+  }
+}
+
+function buildFinancialContext() {
+  const mk = currentMonth;
+  const sig = computeBudgetSignals();
+  const income = getIncome(mk);
+  const totalSpent = getTotalSpent(mk);
+  const catLines = state.categories.map(cat => {
+    const spent = getCatSpent(cat.id, mk);
+    const broHint = getBroVibe(cat.name);
+    return `- ${cat.name}: gastado ${fmtFull(spent)} de un límite de ${fmtFull(cat.budget)} (${cat.budget>0?Math.round((spent/cat.budget)*100):0}%)${broHint? ' [posible categoría personal/sentimental, si aplica un consejo de pana usa un tono como: "'+broHint+'" pero adaptado a la situación real]':''}`;
+  }).join('\n');
+  const goalsLines = state.goals.map(g => `- ${g.name}: ${fmtFull(g.saved||0)} de ${fmtFull(g.target)}`).join('\n') || 'Sin metas activas';
+  const accountsTotal = state.accounts.reduce((a,acc)=>a+acc.balance,0);
+
+  return `Eres el asistente financiero personal de John, dentro de su app de finanzas. Hoy es día ${sig.dayOfMonth} de ${sig.daysInMonth} del mes en curso.
+Habla en español dominicano, tono de pana cercano y directo, pero profesional cuando das el consejo financiero — nada de relleno corporativo ni emojis en exceso (máximo 1 si aplica). Sé breve: 3-6 líneas normalmente, salvo que pidan más detalle.
+
+DATOS REALES DEL MES:
+Ingreso/presupuesto total: ${fmtFull(income)}. Gastado: ${fmtFull(totalSpent)} (${income>0?Math.round((totalSpent/income)*100):0}%).
+
+Categorías:
+${catLines || 'Sin categorías configuradas'}
+
+Metas de ahorro:
+${goalsLines}
+
+Balance total en cuentas: ${fmtFull(accountsTotal)}
+
+INSTRUCCIONES:
+- Si una categoría está excedida o acelerada, dilo claro y da un consejo financiero concreto y accionable (no genérico).
+- Si la categoría suena personal/sentimental (salidas con la pareja, citas, etc.), después del consejo financiero puedes cerrar con una frase corta de "pana" que ponga el gasto en perspectiva emocional, sin sonar a sermón.
+- No inventes datos que no están arriba. Si te preguntan algo que no puedes saber con estos datos, dilo.
+- Nunca uses la palabra "IA" para describirte ni hables de modelos de lenguaje; eres simplemente "tu asistente financiero".`;
+}
+
+async function callGeminiAPI(userText, isProactive) {
+  const apiKey = state.assistant.apiKey;
+  if (!apiKey) {
+    throw new Error('Configura tu API key gratis de Gemini tocando el ⚙️ arriba.');
+  }
+  const model = 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  // Construir historial reciente como contexto conversacional (máx 8 últimos)
+  const recent = state.assistant.history.slice(-8).filter(m => !(isProactive && m===state.assistant.history[state.assistant.history.length-1]));
+  const contents = recent.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }));
+  contents.push({ role:'user', parts:[{ text: userText }] });
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: buildFinancialContext() }] },
+      contents,
+      generationConfig: { maxOutputTokens: 400, temperature: 0.8 }
+    })
+  });
+
+  if (!res.ok) {
+    if (res.status === 400 || res.status === 403) throw new Error('Tu API key no es válida. Revísala en Configurar (⚙️).');
+    if (res.status === 429) throw new Error('Llegaste al límite gratuito de Gemini por ahora. Intenta de nuevo en un momento.');
+    throw new Error('No pude conectar con el asistente (error ' + res.status + ').');
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || 'No tuve una respuesta clara, intenta de nuevo.';
+  return text.trim();
+}
+
+// ── CONFIGURACIÓN DEL ASISTENTE ──────────────
+function openAssistantSettings() {
+  document.getElementById('assist-apikey-input').value = state.assistant.apiKey || '';
+  document.getElementById('assist-threshold-input').value = state.assistant.threshold || 0.25;
+  openModal('modal-assist-settings');
+}
+
+function saveAssistantSettings() {
+  state.assistant.apiKey = document.getElementById('assist-apikey-input').value.trim();
+  state.assistant.threshold = parseFloat(document.getElementById('assist-threshold-input').value);
+  saveState();
+  closeModal();
+  toast(state.assistant.apiKey ? 'Asistente configurado ✓' : 'Configuración guardada', 'success');
+  checkBudgetAlerts();
+}
+
+
 function init() {
   // Theme
   applyTheme(state.theme||'dark');
@@ -856,17 +1218,23 @@ function init() {
   // Theme toggle
   document.getElementById('theme-toggle').addEventListener('click', () => {
     applyTheme(state.theme === 'dark' ? 'light' : 'dark');
-    document.getElementById('theme-toggle').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+    document.querySelector('#theme-toggle use').setAttribute('href', state.theme === 'dark' ? '#ic-sun' : '#ic-moon');
   });
-  document.getElementById('theme-toggle').textContent = state.theme === 'dark' ? '🌙' : '☀️';
+  document.querySelector('#theme-toggle use').setAttribute('href', state.theme === 'dark' ? '#ic-moon' : '#ic-sun');
 
   // Close modal on overlay click
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
   });
+  document.getElementById('assist-overlay').addEventListener('click', e => {
+    if (e.target.id === 'assist-overlay') closeAssistant();
+  });
 
   // Navigate to dashboard
   navigate('dashboard');
+
+  // Revisar señales de presupuesto al abrir la app
+  checkBudgetAlerts();
 }
 
 document.addEventListener('DOMContentLoaded', init);
