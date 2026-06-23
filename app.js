@@ -1160,7 +1160,7 @@ async function callGeminiAPI(userText, isProactive) {
   if (!apiKey) {
     throw new Error('Configura tu API key gratis de Gemini tocando el ⚙️ arriba.');
   }
-  const model = 'gemini-2.0-flash';
+  const model = 'gemini-2.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   // Construir historial reciente como contexto conversacional (máx 8 últimos)
